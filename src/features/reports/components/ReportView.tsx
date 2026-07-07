@@ -155,16 +155,22 @@ export function ReportView({
         </CollapsibleCard>
       )}
 
-      {summary && !hasReport && onRegenerateReport && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 shadow-card">
-          <p className="text-[13px] text-muted">No care report was generated for this visit.</p>
-          <button
-            onClick={onRegenerateReport}
-            disabled={regeneratingReport}
-            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-[12.5px] font-semibold text-ink hover:bg-bg disabled:opacity-50"
-          >
-            {regeneratingReport ? 'Generating…' : 'Regenerate report'}
-          </button>
+      {summary && !hasReport && (
+        <div className="rounded-card border border-amber-ink/25 bg-amber/40 px-4 py-4 shadow-card">
+          <p className="font-display text-[14px] font-bold text-ink">No care report — insufficient data</p>
+          <p className="mt-1 max-w-2xl text-[13px] text-muted">
+            There wasn't enough clinical detail discussed in this visit to generate a care report. The
+            visit summary above reflects what was captured.
+          </p>
+          {onRegenerateReport && (
+            <button
+              onClick={onRegenerateReport}
+              disabled={regeneratingReport}
+              className="mt-3 inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-[12.5px] font-semibold text-ink hover:bg-bg disabled:opacity-50"
+            >
+              {regeneratingReport ? 'Generating…' : 'Try regenerating report'}
+            </button>
+          )}
         </div>
       )}
 
@@ -187,7 +193,7 @@ export function ReportView({
               note="What the clinician communicated during this visit."
             >
               {doctor.chief_concern && (
-                <Field title="Chief concern" accent="bg-sky-ink">
+                <Field title="Major concerns" accent="bg-sky-ink">
                   <p className="text-[13.5px] leading-relaxed text-ink">{doctor.chief_concern}</p>
                 </Field>
               )}

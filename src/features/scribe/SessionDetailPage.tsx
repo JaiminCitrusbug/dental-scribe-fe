@@ -6,11 +6,17 @@ import { Button } from '@/components/atoms/Button'
 import { Card, CardBody, CardHeader } from '@/components/atoms/Card'
 import { Spinner } from '@/components/atoms/Spinner'
 import { DownloadIcon, MicIcon, ReportIcon, TrashIcon } from '@/components/atoms/icons'
+import { AudioPlayer } from '@/components/molecules/AudioPlayer'
 import { CollapsibleCard } from '@/components/molecules/CollapsibleCard'
 import { CopyButton } from '@/components/molecules/CopyButton'
 import { Modal } from '@/components/organisms/Modal'
 import { ReportView } from '@/features/reports/components/ReportView'
-import { useGenerateReport, useSessionReport } from '@/features/reports/hooks'
+import {
+  useGenerateReport,
+  useRegenerateReport,
+  useRegenerateSummary,
+  useSessionReport,
+} from '@/features/reports/hooks'
 import { procedureLabel, sessionStatus } from './constants'
 import { useDeleteSession, useFinishSession, useSession } from './hooks'
 
@@ -44,6 +50,8 @@ export function SessionDetailPage() {
   const isCompleted = session?.status === 'completed'
   const { data: report, isLoading: reportLoading } = useSessionReport(sessionId, isCompleted)
   const generate = useGenerateReport()
+  const regenSummary = useRegenerateSummary()
+  const regenReport = useRegenerateReport()
   const finishMut = useFinishSession()
   const deleteMut = useDeleteSession()
   const [genError, setGenError] = useState<string | null>(null)
@@ -125,9 +133,7 @@ export function SessionDetailPage() {
                   <p className="text-[11.5px] font-semibold uppercase tracking-wide text-muted">Part {part.index}</p>
                 )}
                 <div className="flex items-center gap-2">
-                  <audio controls src={part.url} className="w-full flex-1">
-                    Your browser does not support audio playback.
-                  </audio>
+                  <AudioPlayer src={part.url} className="w-full flex-1" />
                   <button
                     onClick={() =>
                       downloadAudio(
@@ -172,7 +178,15 @@ export function SessionDetailPage() {
 
       {/* Report */}
       {report ? (
-        <ReportView content={report.content} summary={report.summary} disclaimer={report.disclaimer} />
+        <ReportView
+          content={report.content}
+          summary={report.summary}
+          disclaimer={report.disclaimer}
+          onRegenerateSummary={() => regenSummary.mutate(sessionId)}
+          regeneratingSummary={regenSummary.isPending}
+          onRegenerateReport={() => regenReport.mutate(sessionId)}
+          regeneratingReport={regenReport.isPending}
+        />
       ) : reportLoading ? (
         <div className="grid place-items-center py-8 text-primary">
           <Spinner className="size-6" />

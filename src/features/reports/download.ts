@@ -70,7 +70,7 @@ function reportSections(content: ReportContent | null): Section[] {
   )
   if (hasDoctor) {
     s.push({ title: "Doctor's Recommendations", lines: [] })
-    add('Chief Concern', doctor.chief_concern)
+    add('Major Concerns', doctor.chief_concern)
     add('Findings & Assessment', doctor.assessment)
     add('Treatment', doctor.treatment)
     addList('Advised by the clinician', doctor.recommendations)
@@ -119,7 +119,7 @@ export function summaryToText(summary: string): string {
 
 export function doctorToText(doctor: DoctorSection): string {
   const parts: string[] = []
-  if (doctor.chief_concern) parts.push(`Chief concern\n${doctor.chief_concern}`)
+  if (doctor.chief_concern) parts.push(`Major concerns\n${doctor.chief_concern}`)
   if (doctor.assessment) parts.push(`Findings & assessment\n${doctor.assessment}`)
   if (doctor.treatment) parts.push(`Treatment\n${doctor.treatment}`)
   if (doctor.recommendations.length)
