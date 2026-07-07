@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { generateReport, getPublicReport, getSessionReport, listReports, shareReport } from './api'
+import {
+  generateReport,
+  getPublicReport,
+  getSessionReport,
+  listReports,
+  regenerateCareReport,
+  regenerateSummary,
+  shareReport,
+} from './api'
 
 export function useReports(
   page: number,
@@ -33,6 +41,29 @@ export function useGenerateReport() {
       qc.invalidateQueries({ queryKey: ['reports'] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.setQueryData(['report', report.scribe_session_id], report)
+    },
+  })
+}
+
+export function useRegenerateSummary() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionId: string) => regenerateSummary(sessionId),
+    onSuccess: (report) => {
+      qc.setQueryData(['report', report.scribe_session_id], report)
+      qc.invalidateQueries({ queryKey: ['reports'] })
+    },
+  })
+}
+
+export function useRegenerateReport() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (sessionId: string) => regenerateCareReport(sessionId),
+    onSuccess: (report) => {
+      qc.setQueryData(['report', report.scribe_session_id], report)
+      qc.invalidateQueries({ queryKey: ['reports'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }

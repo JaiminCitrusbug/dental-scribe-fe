@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import type { ReportContent } from './types'
+import type { AdditionalSection, DoctorSection, ReportContent } from './types'
 
 export interface ReportExport {
   patientName?: string | null
@@ -22,8 +22,41 @@ function summaryPoints(summary: string): string[] {
     .filter(Boolean)
 }
 
+function normDoctor(content: ReportContent | null): DoctorSection {
+  const d = content?.doctor ?? {}
+  return {
+    chief_concern: d.chief_concern ?? null,
+    assessment: d.assessment ?? null,
+    treatment: d.treatment ?? null,
+    recommendations: d.recommendations ?? [],
+  }
+}
+
+function normAdditional(content: ReportContent | null): AdditionalSection {
+  const a = content?.additional ?? {}
+  return {
+    aftercare: a.aftercare ?? [],
+    preventive_care: a.preventive_care ?? [],
+    follow_up: a.follow_up ?? [],
+    warning_signs: a.warning_signs ?? [],
+    clinic_offerings: a.clinic_offerings ?? [],
+  }
+}
+
+function additionalGroups(a: AdditionalSection): [string, string[]][] {
+  return [
+    ['Aftercare & precautions', a.aftercare],
+    ['Preventive care', a.preventive_care],
+    ['Follow-up & recall', a.follow_up],
+    ['Clinic offerings', a.clinic_offerings],
+    ['Warning signs', a.warning_signs],
+  ]
+}
+
 function reportSections(content: ReportContent | null): Section[] {
   if (!content) return []
+  const doctor = normDoctor(content)
+  const additional = normAdditional(content)
   const s: Section[] = []
   const add = (title: string, value?: string | null) => {
     if (value && value.trim()) s.push({ title, lines: [value.trim()] })
@@ -31,14 +64,30 @@ function reportSections(content: ReportContent | null): Section[] {
   const addList = (title: string, list?: string[]) => {
     if (list && list.length) s.push({ title, lines: list })
   }
-  add('Chief Concern', content.chief_concern)
-  add('Findings & Assessment', content.assessment)
-  add('Treatment', content.treatment)
-  addList('Precautions & Aftercare', content.precautions)
-  addList('Recommendations & Next Steps', content.recommendations)
-  addList('Continued-care Offerings', content.offerings)
-  add('Follow-up', content.follow_up)
-  addList('Warning Signs', content.warning_signs)
+
+  const hasDoctor = Boolean(
+    doctor.chief_concern || doctor.assessment || doctor.treatment || doctor.recommendations.length,
+  )
+  if (hasDoctor) {
+    s.push({ title: "Doctor's Recommendations", lines: [] })
+    add('Chief Concern', doctor.chief_concern)
+    add('Findings & Assessment', doctor.assessment)
+    add('Treatment', doctor.treatment)
+    addList('Advised by the clinician', doctor.recommendations)
+  }
+
+  const groups = additionalGroups(additional)
+  const hasAdditional = groups.some(([, list]) => list.length > 0)
+  if (hasAdditional) {
+    s.push({ title: 'Additional Recommendations', lines: [] })
+    for (const [t, list] of groups) addList(t, list)
+  } else {
+    s.push({
+      title: 'Additional Recommendations',
+      lines: ['No additional considerations - the consultation covered the standard guidance.'],
+    })
+  }
+
   addList('Sources', content.citations)
   return s
 }
@@ -68,9 +117,20 @@ export function summaryToText(summary: string): string {
     .join('\n')
 }
 
-export function reportToText(content: ReportContent | null): string {
-  return reportSections(content)
-    .map((sec) => `${sec.title}\n${sec.lines.map((l) => `• ${l}`).join('\n')}`)
+export function doctorToText(doctor: DoctorSection): string {
+  const parts: string[] = []
+  if (doctor.chief_concern) parts.push(`Chief concern\n${doctor.chief_concern}`)
+  if (doctor.assessment) parts.push(`Findings & assessment\n${doctor.assessment}`)
+  if (doctor.treatment) parts.push(`Treatment\n${doctor.treatment}`)
+  if (doctor.recommendations.length)
+    parts.push(`Advised by the clinician\n${doctor.recommendations.map((l) => `• ${l}`).join('\n')}`)
+  return parts.join('\n\n')
+}
+
+export function additionalToText(a: AdditionalSection): string {
+  return additionalGroups(a)
+    .filter(([, list]) => list.length > 0)
+    .map(([title, list]) => `${title}\n${list.map((l) => `• ${l}`).join('\n')}`)
     .join('\n\n')
 }
 

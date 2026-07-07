@@ -1,13 +1,23 @@
-export interface ReportContent {
+export interface DoctorSection {
   chief_concern: string | null
   assessment: string | null
   treatment: string | null
-  precautions: string[]
   recommendations: string[]
-  offerings: string[]
-  follow_up: string | null
+}
+
+export interface AdditionalSection {
+  aftercare: string[]
+  preventive_care: string[]
+  follow_up: string[]
   warning_signs: string[]
-  citations: string[]
+  clinic_offerings: string[]
+}
+
+export interface ReportContent {
+  topics?: string[]
+  doctor?: Partial<DoctorSection> | null
+  additional?: Partial<AdditionalSection> | null
+  citations?: string[]
 }
 
 export interface Report {

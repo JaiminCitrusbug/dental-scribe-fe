@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Badge } from '@/components/atoms/Badge'
 import { Button } from '@/components/atoms/Button'
 import { Card, CardBody } from '@/components/atoms/Card'
 import { Spinner } from '@/components/atoms/Spinner'
@@ -10,7 +9,6 @@ import { ListToolbar } from '@/components/molecules/ListToolbar'
 import { SortHeader } from '@/components/molecules/SortHeader'
 import { procedureLabel } from '@/features/scribe/constants'
 import { useSort } from '@/lib/useSort'
-import { GROUNDING } from './components/ReportView'
 import { useReports } from './hooks'
 
 function formatDate(value: string): string {
@@ -102,32 +100,25 @@ export function ReportsPage() {
                 <tr className="text-left">
                   <SortHeader label="Patient" column="patient" sort={sort} onSort={toggle} />
                   <SortHeader label="Procedure" column="procedure" sort={sort} onSort={toggle} />
-                  <SortHeader label="Grounding" column="grounding" sort={sort} onSort={toggle} />
                   <SortHeader label="Generated" column="created_at" sort={sort} onSort={toggle} />
                   <th className="px-2.5 pb-3" />
                 </tr>
               </thead>
               <tbody>
-                {reports.map((r) => {
-                  const g = GROUNDING[r.grounding_source] ?? GROUNDING.insufficient
-                  return (
-                    <tr
-                      key={r.id}
-                      className="cursor-pointer border-t border-border text-[13px] hover:bg-bg"
-                      onClick={() => navigate(`/reports/${r.scribe_session_id}`)}
-                    >
-                      <td className="px-2.5 py-3 font-semibold">{r.patient_name ?? '-'}</td>
-                      <td className="px-2.5 py-3 font-medium">{procedureLabel(r.procedure_type)}</td>
-                      <td className="px-2.5 py-3">
-                        <Badge tone={g.tone}>{g.label}</Badge>
-                      </td>
-                      <td className="px-2.5 py-3 font-medium tnum">{formatDate(r.created_at)}</td>
-                      <td className="px-2.5 py-3 text-right">
-                        <ChevronRightIcon className="ml-auto size-4 text-muted" />
-                      </td>
-                    </tr>
-                  )
-                })}
+                {reports.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="cursor-pointer border-t border-border text-[13px] hover:bg-bg"
+                    onClick={() => navigate(`/reports/${r.scribe_session_id}`)}
+                  >
+                    <td className="px-2.5 py-3 font-semibold">{r.patient_name ?? '-'}</td>
+                    <td className="px-2.5 py-3 font-medium">{procedureLabel(r.procedure_type)}</td>
+                    <td className="px-2.5 py-3 font-medium tnum">{formatDate(r.created_at)}</td>
+                    <td className="px-2.5 py-3 text-right">
+                      <ChevronRightIcon className="ml-auto size-4 text-muted" />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}

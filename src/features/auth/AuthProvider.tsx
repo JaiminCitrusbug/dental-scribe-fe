@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { bootstrapAuth, clearTokens, hasStoredSession, setTokens } from '@/api/http'
 import { fetchMe, login as apiLogin, registerClinic } from './api'
@@ -17,6 +18,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [clinic, setClinic] = useState<Clinic | null>(null)
   // If a refresh token is stored, start in 'loading' and silently re-authenticate.
   const [status, setStatus] = useState<AuthStatus>(hasStoredSession() ? 'loading' : 'guest')
@@ -44,13 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const tokens = await apiLogin(email, password)
-    setTokens(tokens.access_token, tokens.refresh_token)
-    const me = await fetchMe()
-    setClinic(me)
-    setStatus('authed')
-  }, [])
+  const login = useCallback(
+    async (email: string, password: string) => {
+      // Drop any previous account's cached queries before loading the new one.
+      queryClient.clear()
+      const tokens = await apiLogin(email, password)
+      setTokens(tokens.access_token, tokens.refresh_token)
+      const me = await fetchMe()
+      setClinic(me)
+      setStatus('authed')
+    },
+    [queryClient],
+  )
 
   const register = useCallback(
     async (payload: RegisterPayload) => {
@@ -64,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearTokens()
     setClinic(null)
     setStatus('guest')
-  }, [])
+    // Wipe cached queries so the next account never sees stale data.
+    queryClient.clear()
+  }, [queryClient])
 
   const updateClinic = useCallback((next: Clinic) => setClinic(next), [])
 

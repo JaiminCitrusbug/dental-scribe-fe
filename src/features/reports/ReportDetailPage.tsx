@@ -7,13 +7,15 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { procedureLabel } from '@/features/scribe/constants'
 import { ReportView } from './components/ReportView'
 import { downloadReport, type ReportExport } from './download'
-import { useSessionReport } from './hooks'
+import { useRegenerateReport, useRegenerateSummary, useSessionReport } from './hooks'
 
 export function ReportDetailPage() {
   const { sessionId = '' } = useParams()
   const navigate = useNavigate()
   const { clinic } = useAuth()
   const { data: report, isLoading, isError } = useSessionReport(sessionId)
+  const regenSummary = useRegenerateSummary()
+  const regenReport = useRegenerateReport()
 
   if (isLoading) {
     return (
@@ -73,9 +75,12 @@ export function ReportDetailPage() {
 
       <ReportView
         content={report.content}
-        groundingSource={report.grounding_source}
         summary={report.summary}
         disclaimer={report.disclaimer}
+        onRegenerateSummary={() => regenSummary.mutate(sessionId)}
+        regeneratingSummary={regenSummary.isPending}
+        onRegenerateReport={() => regenReport.mutate(sessionId)}
+        regeneratingReport={regenReport.isPending}
       />
     </div>
   )

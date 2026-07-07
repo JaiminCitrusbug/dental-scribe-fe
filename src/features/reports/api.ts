@@ -5,6 +5,14 @@ export function generateReport(sessionId: string): Promise<Report> {
   return http.post<Report>(`/reports/sessions/${sessionId}/generate`, undefined, true)
 }
 
+export function regenerateSummary(sessionId: string): Promise<Report> {
+  return http.post<Report>(`/reports/sessions/${sessionId}/regenerate-summary`, undefined, true)
+}
+
+export function regenerateCareReport(sessionId: string): Promise<Report> {
+  return http.post<Report>(`/reports/sessions/${sessionId}/regenerate-care-report`, undefined, true)
+}
+
 export function getSessionReport(sessionId: string): Promise<Report> {
   return http.get<Report>(`/reports/sessions/${sessionId}`)
 }

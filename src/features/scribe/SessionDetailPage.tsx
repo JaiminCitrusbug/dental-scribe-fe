@@ -172,12 +172,7 @@ export function SessionDetailPage() {
 
       {/* Report */}
       {report ? (
-        <ReportView
-          content={report.content}
-          groundingSource={report.grounding_source}
-          summary={report.summary}
-          disclaimer={report.disclaimer}
-        />
+        <ReportView content={report.content} summary={report.summary} disclaimer={report.disclaimer} />
       ) : reportLoading ? (
         <div className="grid place-items-center py-8 text-primary">
           <Spinner className="size-6" />

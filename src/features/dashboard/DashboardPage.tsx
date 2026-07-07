@@ -16,7 +16,6 @@ import {
 } from '@/components/atoms/icons'
 import { StatTile, type StatDelta } from '@/components/molecules/StatTile'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { GROUNDING } from '@/features/reports/components/ReportView'
 import { procedureLabel, sessionStatus } from '@/features/scribe/constants'
 import { accentForKey, accentSurface, type Accent } from '@/lib/accent'
 import { initials } from '@/lib/initials'
@@ -184,19 +183,16 @@ export function DashboardPage() {
                 <EmptyPanel icon={<ReportIcon className="size-5" />} title="No reports yet" note="Care reports appear here after a scribe session." />
               ) : (
                 <div className="space-y-0">
-                  {recentReports.map((r) => {
-                    const g = GROUNDING[r.grounding_source] ?? GROUNDING.insufficient
-                    return (
-                      <button key={r.id} onClick={() => navigate(`/reports/${r.scribe_session_id}`)} className="flex w-full items-center gap-3 border-t border-border py-3 text-left first:border-t-0 hover:bg-bg">
-                        <span className="w-[3px] self-stretch rounded-[3px] bg-primary" />
-                        <div className="min-w-0 flex-1">
-                          <Badge tone={g.tone}>{g.label}</Badge>
-                        </div>
-                        <span className="text-[11.5px] font-medium text-muted">{formatDate(r.created_at)}</span>
-                        <ChevronRightIcon className="size-4 text-muted" />
-                      </button>
-                    )
-                  })}
+                  {recentReports.map((r) => (
+                    <button key={r.id} onClick={() => navigate(`/reports/${r.scribe_session_id}`)} className="flex w-full items-center gap-3 border-t border-border py-3 text-left first:border-t-0 hover:bg-bg">
+                      <span className="w-[3px] self-stretch rounded-[3px] bg-primary" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-ink">Care report</p>
+                      </div>
+                      <span className="text-[11.5px] font-medium text-muted">{formatDate(r.created_at)}</span>
+                      <ChevronRightIcon className="size-4 text-muted" />
+                    </button>
+                  ))}
                 </div>
               )}
             </CardBody>

@@ -42,12 +42,7 @@ export function PublicReportPage() {
                 {data.clinic_name ? ` · ${data.clinic_name}` : ''}
               </p>
             </div>
-            <ReportView
-              content={data.content}
-              groundingSource={data.grounding_source}
-              summary={data.summary}
-              disclaimer={data.disclaimer}
-            />
+            <ReportView content={data.content} summary={data.summary} disclaimer={data.disclaimer} />
           </>
         )}
       </main>

@@ -175,6 +175,14 @@ export function CheckIcon(props: IconProps) {
   )
 }
 
+export function RefreshIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth={1.8} {...props}>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5" />
+    </svg>
+  )
+}
+
 export function DownloadIcon(props: IconProps) {
   return (
     <svg {...base} strokeWidth={1.7} {...props}>
