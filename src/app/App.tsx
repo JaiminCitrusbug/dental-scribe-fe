@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/layout/guards'
 import { AuthProvider } from '@/features/auth/AuthProvider'
-import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
+// import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage' // email flows hidden
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
@@ -35,7 +35,7 @@ export function App() {
             <Route element={<PublicOnlyRoute />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              {/* Email flows hidden: <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
             </Route>
 
             {/* Public shared report (no auth, no app shell) */}

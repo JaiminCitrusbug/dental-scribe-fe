@@ -55,11 +55,13 @@ export function LoginPage() {
         <FormField label="Password" htmlFor="password" error={errors.password?.message}>
           <Input id="password" type="password" autoComplete="current-password" placeholder="••••••••" {...register('password')} />
         </FormField>
+        {/* Password reset is hidden while email flows are disabled.
         <div className="flex justify-end">
           <Link to="/forgot-password" className="text-[12.5px] font-medium text-muted hover:text-primary">
             Forgot password?
           </Link>
         </div>
+        */}
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Logging in…' : 'Log in'}
         </Button>

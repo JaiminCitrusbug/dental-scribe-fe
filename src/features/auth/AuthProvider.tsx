@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { bootstrapAuth, clearTokens, hasStoredSession, setTokens } from '@/api/http'
-import { fetchMe, login as apiLogin, registerClinic } from './api'
+import { bootstrapAuth, clearTokens, setAccessToken } from '@/api/http'
+import { fetchMe, login as apiLogin, logout as apiLogout, registerClinic } from './api'
 import type { Clinic, RegisterPayload } from './types'
 
 type AuthStatus = 'loading' | 'guest' | 'authed'
@@ -20,11 +20,10 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [clinic, setClinic] = useState<Clinic | null>(null)
-  // If a refresh token is stored, start in 'loading' and silently re-authenticate.
-  const [status, setStatus] = useState<AuthStatus>(hasStoredSession() ? 'loading' : 'guest')
+  // Start in 'loading' and try to re-authenticate from the refresh cookie on load.
+  const [status, setStatus] = useState<AuthStatus>('loading')
 
   useEffect(() => {
-    if (!hasStoredSession()) return
     let active = true
     bootstrapAuth().then(async (ok) => {
       if (!active) return
@@ -51,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Drop any previous account's cached queries before loading the new one.
       queryClient.clear()
       const tokens = await apiLogin(email, password)
-      setTokens(tokens.access_token, tokens.refresh_token)
+      setAccessToken(tokens.access_token)
       const me = await fetchMe()
       setClinic(me)
       setStatus('authed')
@@ -68,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(() => {
+    // Revoke the refresh token + clear the cookie server-side (fire-and-forget).
+    apiLogout().catch(() => {})
     clearTokens()
     setClinic(null)
     setStatus('guest')

@@ -10,49 +10,24 @@
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 const API = `${BASE}/api/v1`
 
-// Access token stays in memory only. The refresh token is persisted so a page
-// reload can silently re-authenticate instead of logging the user out.
-const REFRESH_STORAGE_KEY = 'ds_refresh_token'
-
-function readStoredRefresh(): string | null {
-  try {
-    return localStorage.getItem(REFRESH_STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
+// Access token is kept in memory only. The refresh token lives in an httpOnly
+// cookie set by the backend (invisible to JS), so a reload silently
+// re-authenticates via /auth/refresh (the cookie rides along with credentials).
 let accessToken: string | null = null
-let refreshToken: string | null = readStoredRefresh()
 
-export function setTokens(access: string, refresh: string): void {
+export function setAccessToken(access: string): void {
   accessToken = access
-  refreshToken = refresh
-  try {
-    localStorage.setItem(REFRESH_STORAGE_KEY, refresh)
-  } catch {
-    /* storage unavailable - fall back to in-memory only */
-  }
 }
 export function clearTokens(): void {
   accessToken = null
-  refreshToken = null
-  try {
-    localStorage.removeItem(REFRESH_STORAGE_KEY)
-  } catch {
-    /* noop */
-  }
 }
 export function hasSession(): boolean {
   return accessToken !== null
 }
-export function hasStoredSession(): boolean {
-  return refreshToken !== null
-}
 
-/** Silently obtain a fresh access token from the stored refresh token (on reload). */
+/** Silently obtain a fresh access token from the refresh cookie (on reload). */
 export function bootstrapAuth(): Promise<boolean> {
-  return refreshToken ? tryRefresh() : Promise.resolve(false)
+  return tryRefresh()
 }
 
 /** Access token for the WebSocket auth handshake (in-memory only). */
@@ -95,21 +70,22 @@ async function raw(path: string, opts: RequestOptions): Promise<Response> {
   return fetch(`${API}${path}`, {
     method: opts.method ?? 'GET',
     headers,
+    // Send/receive the httpOnly refresh cookie on auth calls.
+    credentials: 'include',
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   })
 }
 
 async function tryRefresh(): Promise<boolean> {
-  if (!refreshToken) return false
-  const res = await raw('/auth/refresh', { method: 'POST', body: { refresh_token: refreshToken } })
+  const res = await raw('/auth/refresh', { method: 'POST' })
   if (!res.ok) {
     clearTokens()
     return false
   }
   const json = await res.json()
-  const data = json?.data
-  if (data?.access_token && data?.refresh_token) {
-    setTokens(data.access_token, data.refresh_token)
+  const access = json?.data?.access_token
+  if (access) {
+    setAccessToken(access)
     return true
   }
   clearTokens()
