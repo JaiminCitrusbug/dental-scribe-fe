@@ -5,51 +5,57 @@ import { cn } from '@/lib/cn'
 /**
  * Audio player for MediaRecorder/WebM recordings.
  *
- * Two problems it solves:
- *  1. WebM blobs carry no duration in their header, so the browser reports
- *     `Infinity` (scrubber jumps to the end, total time unknown). We seek to the
- *     end once, which forces the browser to read every cluster and compute the
- *     real duration, then reset to the start.
- *  2. While that metadata loads, the native controls show a misleading `0:00` and
- *     an empty bar. We show a loading skeleton and only reveal the player once the
- *     real duration is known.
+ * WebM blobs carry no duration in their header, so the browser first reports
+ * `Infinity`/`0`/provisional durations and only settles on the real value after
+ * scanning to the end. We force that scan (seek to the end), and reveal the player
+ * only once the duration has *settled* (debounced) — otherwise the native controls
+ * briefly flash `0:00` before the real total appears.
  */
 export function AudioPlayer({ src, className }: { src: string; className?: string }) {
   const ref = useRef<HTMLAudioElement>(null)
   const fixed = useRef(false)
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [ready, setReady] = useState(false)
 
-  // Reset when the source changes; reveal after a timeout as a safety net.
   useEffect(() => {
     setReady(false)
     fixed.current = false
-    const t = setTimeout(() => setReady(true), 20000)
-    return () => clearTimeout(t)
+    const safety = setTimeout(() => setReady(true), 30000) // never stay stuck on the loader
+    return () => {
+      clearTimeout(safety)
+      if (revealTimer.current) clearTimeout(revealTimer.current)
+    }
   }, [src])
 
-  function onLoadedMetadata() {
-    const audio = ref.current
-    if (!audio) return
-    if (audio.duration === Infinity || Number.isNaN(audio.duration)) {
-      // Force the browser to scan to the end to establish the true duration.
-      try {
-        audio.currentTime = 1e101
-      } catch {
-        /* seeking not ready yet */
-      }
-    } else {
-      fixed.current = true
-      setReady(true)
-    }
-  }
-
-  function onDurationChange() {
-    const audio = ref.current
-    if (!audio || fixed.current) return
-    if (audio.duration !== Infinity && !Number.isNaN(audio.duration) && audio.duration > 0) {
+  // Reveal only after the duration stops changing for a moment (settled), so the
+  // total time is correct the instant the player appears.
+  function tryReveal() {
+    const a = ref.current
+    if (!a || fixed.current) return
+    if (a.duration === Infinity || Number.isNaN(a.duration) || a.duration <= 0) return
+    if (revealTimer.current) clearTimeout(revealTimer.current)
+    revealTimer.current = setTimeout(() => {
+      const audio = ref.current
+      if (!audio || fixed.current) return
+      if (audio.duration === Infinity || Number.isNaN(audio.duration) || audio.duration <= 0) return
       fixed.current = true
       audio.currentTime = 0
       setReady(true)
+    }, 400)
+  }
+
+  function onLoadedMetadata() {
+    const a = ref.current
+    if (!a) return
+    if (a.duration === Infinity || Number.isNaN(a.duration) || a.duration <= 0) {
+      // Force the browser to scan to the end to establish the true duration.
+      try {
+        a.currentTime = 1e101
+      } catch {
+        /* not seekable yet */
+      }
+    } else {
+      tryReveal()
     }
   }
 
@@ -57,7 +63,7 @@ export function AudioPlayer({ src, className }: { src: string; className?: strin
     <div className={className}>
       {!ready && (
         <div className="flex h-[42px] items-center gap-2 rounded-md border border-border bg-bg px-3 text-[12px] font-medium text-muted">
-          <Spinner className="size-4" /> Loading recording…
+          <Spinner className="size-4" /> Loading recording - it might take some time…
         </div>
       )}
       <audio
@@ -67,7 +73,7 @@ export function AudioPlayer({ src, className }: { src: string; className?: strin
         src={src}
         className={cn('w-full', !ready && 'hidden')}
         onLoadedMetadata={onLoadedMetadata}
-        onDurationChange={onDurationChange}
+        onDurationChange={tryReveal}
         onError={() => setReady(true)}
       >
         Your browser does not support audio playback.
