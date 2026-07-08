@@ -3,7 +3,6 @@ name: Deploy frontend
 on:
   push:
     branches: [pre-devlop]
-  workflow_dispatch:
 
 concurrency:
   group: deploy-frontend
