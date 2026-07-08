@@ -22,21 +22,24 @@ jobs:
 
       - name: Build image
         # VITE_API_BASE_URL is a repo Actions variable (Settings > Secrets and
-        # variables > Actions > Variables), e.g. http://YOUR_EC2_IP — it is
-        # baked into the JS bundle at build time.
+        # variables > Actions > Variables) = https://dentalscribe.citrusbug.com
+        # — it is baked into the JS bundle at build time.
         run: |
           docker build \
             --build-arg VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}" \
             -t dental-scribe-fe:latest .
 
       - name: Restart frontend
-        run: docker compose -f "$COMPOSE_FILE" up -d frontend
+        # --no-deps: never touch the backend container from the frontend deploy
+        # (the two repos can deploy at the same time).
+        run: docker compose -f "$COMPOSE_FILE" up -d --no-deps frontend
 
       - name: Smoke check
         run: |
           sleep 3
           curl -fsS -o /dev/null http://localhost/ && echo "frontend OK"
 
-      - name: Prune dangling images
+      - name: Prune old frontend images
         if: always()
-        run: docker image prune -f
+        # Label-scoped so a simultaneous backend deploy is never affected.
+        run: docker image prune -f --filter "label=app=dental-scribe-fe"
