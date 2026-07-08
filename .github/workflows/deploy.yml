@@ -35,9 +35,12 @@ jobs:
         run: docker compose -f "$COMPOSE_FILE" up -d --no-deps frontend
 
       - name: Smoke check
+        # Hit the frontend container directly (loopback :8080). Plain
+        # http://localhost/ goes through host nginx, whose certbot port-80
+        # block 404s any Host that isn't the real domain.
         run: |
           sleep 3
-          curl -fsS -o /dev/null http://localhost/ && echo "frontend OK"
+          curl -fsS -o /dev/null http://127.0.0.1:8080/ && echo "frontend OK"
 
       - name: Prune old frontend images
         if: always()
