@@ -8,6 +8,7 @@ import { Input } from '@/components/atoms/Input'
 import { Textarea } from '@/components/atoms/Textarea'
 import { FormField } from '@/components/molecules/FormField'
 import { Modal } from '@/components/organisms/Modal'
+import { todayIso, validateDob } from '../dob'
 import { useCreatePatient, useUpdatePatient } from '../hooks'
 import type { Patient, PatientInput } from '../types'
 
@@ -16,7 +17,10 @@ const schema = z.object({
   last_name: z.string().min(1, 'Required').max(80),
   email: z.string().email('Invalid email').max(320).optional().or(z.literal('')),
   phone: z.string().max(20).optional().or(z.literal('')),
-  date_of_birth: z.string().optional().or(z.literal('')),
+  date_of_birth: z.string().superRefine((v, ctx) => {
+    const r = validateDob(v)
+    if (!r.ok) ctx.addIssue({ code: z.ZodIssueCode.custom, message: r.error ?? 'Invalid date' })
+  }),
   medical_notes: z.string().optional().or(z.literal('')),
 })
 type Values = z.infer<typeof schema>
@@ -107,7 +111,7 @@ export function PatientFormModal({ open, onClose, patient }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <FormField label="Date of birth" htmlFor="date_of_birth" error={errors.date_of_birth?.message}>
-            <Input id="date_of_birth" type="date" {...register('date_of_birth')} />
+            <Input id="date_of_birth" type="date" max={todayIso()} {...register('date_of_birth')} />
           </FormField>
           <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
             <Input id="phone" placeholder="+1 555 0100" {...register('phone')} />

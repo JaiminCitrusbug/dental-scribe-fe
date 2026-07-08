@@ -4,6 +4,7 @@ import { Input } from '@/components/atoms/Input'
 import { Spinner } from '@/components/atoms/Spinner'
 import { SearchIcon } from '@/components/atoms/icons'
 import { FormField } from '@/components/molecules/FormField'
+import { todayIso, validateDob } from '@/features/patients/dob'
 import { usePatients } from '@/features/patients/hooks'
 import type { Patient, PatientInput } from '@/features/patients/types'
 import { accentForKey } from '@/lib/accent'
@@ -34,7 +35,8 @@ export function PatientStep({ onChange }: Props) {
     if (mode === 'existing') {
       onChange(selected ? { patient_id: selected.id } : null)
     } else {
-      const ready = np.first_name.trim() && np.last_name.trim()
+      const dob = validateDob(np.date_of_birth)
+      const ready = Boolean(np.first_name.trim() && np.last_name.trim() && dob.ok)
       onChange(
         ready
           ? {
@@ -124,8 +126,18 @@ export function PatientStep({ onChange }: Props) {
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Date of birth" htmlFor="np_dob">
-              <Input id="np_dob" type="date" value={np.date_of_birth} onChange={(e) => setNp({ ...np, date_of_birth: e.target.value })} />
+            <FormField
+              label="Date of birth"
+              htmlFor="np_dob"
+              error={np.date_of_birth && !validateDob(np.date_of_birth).ok ? validateDob(np.date_of_birth).error : undefined}
+            >
+              <Input
+                id="np_dob"
+                type="date"
+                max={todayIso()}
+                value={np.date_of_birth}
+                onChange={(e) => setNp({ ...np, date_of_birth: e.target.value })}
+              />
             </FormField>
             <FormField label="Phone" htmlFor="np_phone">
               <Input id="np_phone" value={np.phone} onChange={(e) => setNp({ ...np, phone: e.target.value })} />

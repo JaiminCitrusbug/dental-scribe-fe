@@ -5,6 +5,8 @@ import { ApiError } from '@/api/http'
 import { Button } from '@/components/atoms/Button'
 import { Card, CardBody, CardHeader } from '@/components/atoms/Card'
 import { MicIcon, ReportIcon } from '@/components/atoms/icons'
+import { CollapsibleCard } from '@/components/molecules/CollapsibleCard'
+import { CopyButton } from '@/components/molecules/CopyButton'
 import { useGenerateReport } from '@/features/reports/hooks'
 import { startSession } from './api'
 import { PatientStep, type PatientSelection } from './components/PatientStep'
@@ -276,6 +278,8 @@ export function ScribePage() {
   }
 
   // ---------- DONE ----------
+  const transcriptText = stream.segments.map((s) => `${prettySpeaker(s.speaker)}: ${s.text}`).join('\n')
+
   return (
     <div className="mx-auto max-w-[720px]">
       <div className="mb-[22px]">
@@ -283,37 +287,18 @@ export function ScribePage() {
         <p className="text-[13.5px] text-muted">{session?.patient_name} · transcript saved.</p>
       </div>
 
-      <Card>
-        <CardHeader title="Transcript" />
-        <CardBody>
-          {stream.segments.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-muted">No speech was captured.</p>
-          ) : (
-            <div className="space-y-3">
-              {stream.segments.map((seg, i) => (
-                <div key={i} className="flex gap-3">
-                  <span className="mt-0.5 w-[76px] shrink-0 text-[11.5px] font-semibold uppercase tracking-wide text-muted">
-                    {prettySpeaker(seg.speaker)}
-                  </span>
-                  <p className="text-[14px] leading-relaxed text-ink">{seg.text}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      <div className="mt-4 rounded-card border border-border bg-sky/40 px-4 py-3 text-[13px] text-sky-ink">
+      {/* Actions first so they stay reachable above a long transcript. */}
+      <div className="mb-4 rounded-card border border-border bg-sky/40 px-4 py-3 text-[13px] text-sky-ink">
         Generate the AI summary &amp; grounded care report from this transcript.
       </div>
 
       {genError && (
-        <div className="mt-4 rounded-md border border-rose-ink/25 bg-rose px-3 py-2.5 text-[13px] font-medium text-rose-ink">
+        <div className="mb-4 rounded-md border border-rose-ink/25 bg-rose px-3 py-2.5 text-[13px] font-medium text-rose-ink">
           {genError}
         </div>
       )}
 
-      <div className="mt-5 flex flex-wrap gap-2.5">
+      <div className="mb-5 flex flex-wrap gap-2.5">
         <Button onClick={handleGenerate} disabled={generate.isPending} leadingIcon={<ReportIcon />}>
           {generate.isPending ? 'Generating…' : 'Generate care report'}
         </Button>
@@ -324,6 +309,26 @@ export function ScribePage() {
           Start another
         </Button>
       </div>
+
+      <CollapsibleCard
+        title="Transcript"
+        actions={stream.segments.length > 0 ? <CopyButton text={transcriptText} label="Copy transcript" /> : undefined}
+      >
+        {stream.segments.length === 0 ? (
+          <p className="py-8 text-center text-[13px] text-muted">No speech was captured.</p>
+        ) : (
+          <div className="space-y-3">
+            {stream.segments.map((seg, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="mt-0.5 w-[76px] shrink-0 text-[11.5px] font-semibold uppercase tracking-wide text-muted">
+                  {prettySpeaker(seg.speaker)}
+                </span>
+                <p className="text-[14px] leading-relaxed text-ink">{seg.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CollapsibleCard>
     </div>
   )
 }
