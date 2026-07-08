@@ -7,17 +7,20 @@ interface NavItemProps {
   icon: ReactNode
   label: string
   end?: boolean
+  collapsed?: boolean
 }
 
 /** Sidebar navigation link - active state driven by the router. */
-export function NavItem({ to, icon, label, end }: NavItemProps) {
+export function NavItem({ to, icon, label, end, collapsed }: NavItemProps) {
   return (
     <NavLink
       to={to}
       end={end}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          'mb-0.5 flex items-center gap-[11px] rounded-[9px] px-2.5 py-2.5 text-[13.5px] font-medium transition-colors',
+          'mb-0.5 flex items-center rounded-[9px] py-2.5 text-[13.5px] font-medium transition-colors',
+          collapsed ? 'justify-center px-0' : 'gap-[11px] px-2.5',
           isActive
             ? 'bg-primary font-semibold text-white shadow-card'
             : 'text-sidebar-fg hover:bg-sidebar-2 hover:text-white/90',
@@ -25,7 +28,7 @@ export function NavItem({ to, icon, label, end }: NavItemProps) {
       }
     >
       <span className="size-[17px] shrink-0">{icon}</span>
-      {label}
+      {!collapsed && label}
     </NavLink>
   )
 }
