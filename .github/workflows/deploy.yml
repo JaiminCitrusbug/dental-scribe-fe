@@ -1,0 +1,42 @@
+name: Deploy frontend
+
+on:
+  push:
+    branches: [pre-devlop]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+env:
+  COMPOSE_FILE: /opt/dental-scribe/docker-compose.yml
+
+jobs:
+  deploy:
+    # Self-hosted runner registered on the EC2 instance for this repo.
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        # VITE_API_BASE_URL is a repo Actions variable (Settings > Secrets and
+        # variables > Actions > Variables), e.g. http://YOUR_EC2_IP — it is
+        # baked into the JS bundle at build time.
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}" \
+            -t dental-scribe-fe:latest .
+
+      - name: Restart frontend
+        run: docker compose -f "$COMPOSE_FILE" up -d frontend
+
+      - name: Smoke check
+        run: |
+          sleep 3
+          curl -fsS -o /dev/null http://localhost/ && echo "frontend OK"
+
+      - name: Prune dangling images
+        if: always()
+        run: docker image prune -f
